@@ -1,1 +1,1 @@
-# NodeRank
+# Source Code of GraphPrior

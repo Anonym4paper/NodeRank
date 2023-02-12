@@ -7,7 +7,7 @@
     scikit-learn 0.24.2
 
 ## Test attack data generation
-    python get_attack.py --path_x_np '../data/pubmed/x_np.pkl' --path_edge_index '../data/pubmed/edge_index_np.pkl' --path_y '../data/pubmed/y_np.pkl' --save_edge_index './test/attack_data/pubmed/pubmed'
+    python get_attack.py --path_x_np './data/pubmed/x_np.pkl' --path_edge_index './data/pubmed/edge_index_np.pkl' --path_y './data/pubmed/y_np.pkl' --save_edge_index './test/attack_data/pubmed/pubmed'
 
 ## Test mutation models generation
     python get_mutation_models.py --path_x_np './data/lastfm/x_np.pkl' --path_edge_index './data/lastfm/edge_index_np.pkl' --path_y './data/lastfm/y_np.pkl' --path_save_model './test/lastfm_tagcn/lastfm_tagcn_' --path_save_config './test/lastfm_tagcn/lastfm_tagcn_' --model_name 'tagcn'

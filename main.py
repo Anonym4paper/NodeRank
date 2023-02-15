@@ -38,10 +38,10 @@ path_mutation_x_np_list = args.path_mutation_x_np_list
 
 
 target_hidden_channel = 16
-path_result_pfd = 'res/pfd' + '_' + subject_name + '.csv'
-path_result_apfd = 'res/apfd' + '_' + subject_name + '.csv'
+path_result_pfd = 'pfd' + '_' + subject_name + '.csv'
+path_result_apfd = 'apfd' + '_' + subject_name + '.csv'
 
-num_node_features, num_classes, x, edge_index, y, test_y, train_idx, test_idx = load_data(path_x_np, path_edge_index, path_y)
+num_node_features, num_classes, x, edge_index, y, test_y, train_y, train_idx, test_idx = load_data(path_x_np, path_edge_index, path_y)
 path_model_list = get_model_path(path_model_file)
 path_model_list = sorted(path_model_list)
 path_config_list = [i.replace('.pt', '.pkl') for i in path_model_list]
@@ -92,6 +92,7 @@ def main():
     y_pred_train_xgb = model.predict_proba(x_train)[:, 1]
     y_pred_test_xgb = model.predict_proba(x_test)[:, 1]
     xgb_rank_idx = y_pred_test_xgb.argsort()[::-1].copy()
+    xgb_rank_idx_train = y_pred_train_xgb.argsort()[::-1].copy()
 
     # LR
     model = LogisticRegression(solver='liblinear')
@@ -100,6 +101,7 @@ def main():
     y_pred_train_lr = model.predict_proba(x_train)[:, 1]
     y_pred_test_lr = model.predict_proba(x_test)[:, 1]
     lr_rank_idx = y_pred_test_lr.argsort()[::-1].copy()
+    lr_rank_idx_train = y_pred_train_lr.argsort()[::-1].copy()
 
     # RF
     model = RandomForestClassifier()
@@ -108,6 +110,7 @@ def main():
     y_pred_train_rf = model.predict_proba(x_train)[:, 1]
     y_pred_test_rf = model.predict_proba(x_test)[:, 1]
     rf_rank_idx = y_pred_test_rf.argsort()[::-1].copy()
+    rf_rank_idx_train = y_pred_train_rf.argsort()[::-1].copy()
 
     # LGBM
     model = LGBMClassifier()
@@ -116,6 +119,7 @@ def main():
     y_pred_train_lgb = model.predict_proba(x_train)[:, 1]
     y_pred_test_lgb = model.predict_proba(x_test)[:, 1]
     lgb_rank_idx = y_pred_test_lgb.argsort()[::-1].copy()
+    lgb_rank_idx_train = y_pred_train_lgb.argsort()[::-1].copy()
 
     # fusion model
     y_pred_test_fusion = y_pred_test_xgb + y_pred_test_lr + y_pred_test_rf + y_pred_test_lgb
@@ -124,6 +128,9 @@ def main():
 
     target_pre = target_model(x, edge_index).argmax(dim=1).numpy()[test_idx]
     idx_miss_list = get_idx_miss_class(target_pre, test_y)
+
+    target_pre_train = target_model(x, edge_index).argmax(dim=1).numpy()[train_idx]
+    idx_miss_list_train = get_idx_miss_class(target_pre_train, train_y)
 
     mutation_rank_idx = Mutation_rank_idx(num_node_features, target_hidden_channel, num_classes, target_model_path, x,
                                           edge_index, test_idx, model_list, model_name)
@@ -172,8 +179,8 @@ def main():
     df.to_csv(path_result_apfd, mode='a', header=False, index=False)
 
     # Different model fusion methods
-    y_pred_test_fusion_weight = y_pred_test_xgb*apfd(idx_miss_list, xgb_rank_idx) + y_pred_test_lr*apfd(idx_miss_list, lr_rank_idx) + \
-                                y_pred_test_rf*apfd(idx_miss_list, rf_rank_idx) + y_pred_test_lgb*apfd(idx_miss_list, lgb_rank_idx)
+    y_pred_test_fusion_weight = y_pred_test_xgb*apfd(idx_miss_list_train, xgb_rank_idx_train) + y_pred_test_lr*apfd(idx_miss_list_train, lr_rank_idx_train) + \
+                                y_pred_test_rf*apfd(idx_miss_list_train, rf_rank_idx_train) + y_pred_test_lgb*apfd(idx_miss_list_train, lgb_rank_idx_train)
     fusion_weight_rank_idx = y_pred_test_fusion_weight.argsort()[::-1].copy()
     fusion_weight_ratio_list = get_res_ratio_list(idx_miss_list, fusion_weight_rank_idx, select_ratio_list)
     fusion_weight_ratio_list.insert(0, subject_name + '_' + 'fusion_weight')
@@ -230,3 +237,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
